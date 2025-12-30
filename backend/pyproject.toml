@@ -1,0 +1,38 @@
+[project]
+name = "trackmybets-backend"
+version = "0.1.0"
+description = "FastAPI service for TrackMyBets 2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.24",
+    "pydantic[email]>=2.6.1",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13.1",
+    "pandas>=2.2",
+    "python-multipart>=0.0.9",
+    "duckdb>=0.9",
+    "loguru>=0.7",
+    "aiofiles>=23.2",
+    "pendulum>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+    "ruff",
+]
+
+[project.scripts]
+trackmybets = "app.cli:main"
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
