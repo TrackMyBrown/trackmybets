@@ -43,10 +43,10 @@ Refer to `docs/architecture.md` for detailed module breakdowns, data lifecycle, 
 ## Browser extension (separate repository)
 The Sportsbet downloader extension now lives outside this mono-repo so it can be versioned and distributed independently:
 
-- Source: `/Users/adamk/Documents/Scripting/tmb-activity-downloader` (or clone from the corresponding GitHub repo).
+- Source: `../tmb-activity-downloader` (clone the helper repo alongside this project).
 - Build/update ZIP for the frontend download with the helper script in this repo:
   ```bash
-  cd "/Users/adamk/Documents/Scripting/TrackMyBets 2.0"
+  cd /path/to/trackmybets-2.0
   ./scripts/build-extension.sh
   ```
   Set `TRACKMYBETS_EXTENSION_DIR` if the extension lives somewhere else.
