@@ -1,5 +1,9 @@
-TEAMS_BY_SPORT = {
-    "AFL": [
+{
+  "sports": [
+    {
+      "name": "AFL",
+      "category": "sport",
+      "entities": [
         "Adelaide Crows",
         "Brisbane Lions",
         "Carlton Blues",
@@ -17,9 +21,13 @@ TEAMS_BY_SPORT = {
         "St Kilda Saints",
         "Sydney Swans",
         "West Coast Eagles",
-        "Western Bulldogs",
-    ],
-    "NRL": [
+        "Western Bulldogs"
+      ]
+    },
+    {
+      "name": "NRL",
+      "category": "sport",
+      "entities": [
         "Brisbane Broncos",
         "Canberra Raiders",
         "Canterbury Bulldogs",
@@ -35,9 +43,13 @@ TEAMS_BY_SPORT = {
         "South Sydney Rabbitohs",
         "St George Illawarra Dragons",
         "Sydney Roosters",
-        "Wests Tigers",
-    ],
-    "Soccer": [
+        "Wests Tigers"
+      ]
+    },
+    {
+      "name": "Soccer",
+      "category": "sport",
+      "entities": [
         "Arsenal",
         "Aston Villa",
         "Bournemouth",
@@ -72,9 +84,13 @@ TEAMS_BY_SPORT = {
         "Inter Milan",
         "AC Milan",
         "Roma",
-        "Napoli",
-    ],
-    "Basketball": [
+        "Napoli"
+      ]
+    },
+    {
+      "name": "Basketball",
+      "category": "sport",
+      "entities": [
         "Atlanta Hawks",
         "Boston Celtics",
         "Brooklyn Nets",
@@ -104,9 +120,13 @@ TEAMS_BY_SPORT = {
         "San Antonio Spurs",
         "Toronto Raptors",
         "Utah Jazz",
-        "Washington Wizards",
-    ],
-    "Cricket": [
+        "Washington Wizards"
+      ]
+    },
+    {
+      "name": "Cricket",
+      "category": "sport",
+      "entities": [
         "Brisbane Heat",
         "Adelaide Strikers",
         "Sydney Sixers",
@@ -122,9 +142,13 @@ TEAMS_BY_SPORT = {
         "Pakistan",
         "South Africa",
         "West Indies",
-        "Sri Lanka",
-    ],
-    "Tennis": [
+        "Sri Lanka"
+      ]
+    },
+    {
+      "name": "Tennis",
+      "category": "sport",
+      "entities": [
         "Adam Walton",
         "Adolfo Daniel Vallejo",
         "Adrian Mannarino",
@@ -524,19 +548,11 @@ TEAMS_BY_SPORT = {
         "Zdenek Kolar",
         "Zeynep Sonmez",
         "Zizou Bergs",
-        "Zsombor Piros",
-    ],
-}
-
-
-BET_TYPE_KEYWORDS = {
-    "Same Game Multi": ["same game multi", "sgm"],
-    "Multi": ["multibet", "multi"],
-    "Exotic": ["trifecta", "first 4", "exacta", "quinella", "quaddie", "boxed"],
-}
-
-TEAM_ALIASES = {
-    # AFL shorthand names
+        "Zsombor Piros"
+      ]
+    }
+  ],
+  "aliases": {
     "adelaide": "Adelaide Crows",
     "brisbane": "Brisbane Lions",
     "carlton": "Carlton Blues",
@@ -556,6 +572,6 @@ TEAM_ALIASES = {
     "sydney": "Sydney Swans",
     "west coast": "West Coast Eagles",
     "western bulldogs": "Western Bulldogs",
-    # Common soccer abbreviations
-    "nottm forest": "Nottingham Forest",
+    "nottm forest": "Nottingham Forest"
+  }
 }

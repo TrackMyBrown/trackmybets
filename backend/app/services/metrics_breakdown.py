@@ -56,7 +56,7 @@ def breakdown_by(
 
     if sport:
         normalized = sport.strip().lower()
-        if normalized == "unknown":
+        if normalized in {"unknown", "unclassified"}:
             stmt = stmt.where(Bet.sport.is_(None))
         else:
             stmt = stmt.where(func.lower(Bet.sport) == normalized)

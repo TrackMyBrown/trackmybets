@@ -97,6 +97,8 @@ def summarize_cash_movements(rows: list[dict[str, str]]) -> dict[str, Decimal]:
             totals["deposit"] += abs(amount)
         elif tx_type == "withdrawal":
             totals["withdrawal"] += abs(amount)
+        elif tx_type == "returned withdrawal":
+            totals["deposit"] += abs(amount)
     return totals
 
 
@@ -107,17 +109,24 @@ def aggregate_bets(rows: list[dict[str, str]]) -> dict[str, dict[str, object]]:
     })
 
     for row in rows:
+        tx_type = (row.get("Type") or "").strip().lower()
         bet_id = row.get("Bet Id")
         transaction_id = row.get("Transaction Id")
+        summary = row.get("Summary", "") or ""
+        parsed = parse_summary(summary)
+
+        if not bet_id and tx_type == "manual adjustment" and transaction_id:
+            bet_id = f"manual-adjustment-{transaction_id}"
+
         if not bet_id or not transaction_id:
             continue
 
         entry = aggregates[bet_id]
-        parsed = parse_summary(row.get("Summary", "") or "")
         entry.setdefault("last_transaction_id", transaction_id)
-        entry.setdefault("bet_type", parsed.bet_type)
+        bet_type = "Manual Adjustment" if tx_type == "manual adjustment" else parsed.bet_type
+        entry.setdefault("bet_type", bet_type)
         entry.setdefault("market_type", parsed.market_type)
-        entry.setdefault("summary", row.get("Summary", ""))
+        entry.setdefault("summary", summary)
         entry.setdefault("occurred_at", parse_datetime(row.get("Time (AEST)")))
         entry.setdefault("sport", parsed.sport)
         entry.setdefault("competition", parsed.league)
@@ -130,13 +139,34 @@ def aggregate_bets(rows: list[dict[str, str]]) -> dict[str, dict[str, object]]:
         entry.setdefault("odds", parsed.odds)
         entry.setdefault("result", parsed.result)
 
+        entry.setdefault("voided", False)
+
         amount = to_decimal(row.get("Amount"))
-        if amount < 0:
-            entry["stake"] = entry["stake"] + abs(amount)
-        else:
+        if tx_type == "bet stake":
+            if amount < 0:
+                entry["stake"] = entry["stake"] + abs(amount)
+            else:
+                entry["payout"] = entry["payout"] + amount
+        elif tx_type in {"win", "cashed out", "manual adjustment"}:
             entry["payout"] = entry["payout"] + amount
+        elif tx_type == "void":
+            entry["payout"] = entry["payout"] + amount
+            entry["voided"] = True
+        elif tx_type == "lose":
+            continue
+        else:
+            if amount < 0:
+                entry["stake"] = entry["stake"] + abs(amount)
+            else:
+                entry["payout"] = entry["payout"] + amount
 
         entry["last_transaction_id"] = transaction_id
+
+    for payload in aggregates.values():
+        if payload.pop("voided", False):
+            payload["stake"] = Decimal("0")
+            payload["payout"] = Decimal("0")
+            payload["result"] = "Void"
 
     return aggregates
 

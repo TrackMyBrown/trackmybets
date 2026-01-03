@@ -19,7 +19,7 @@ function CashSummary() {
   const deposits = data?.deposits ?? 0;
   const withdrawals = data?.withdrawals ?? 0;
   const net = deposits - withdrawals;
-  const netDisplay = net > 0 ? -net : net;
+  const netDisplay = Math.abs(net);
   const netTone = net > 0 ? "negative" : "positive";
 
   return (
@@ -31,6 +31,7 @@ function CashSummary() {
         value={netDisplay}
         tone={netTone}
         loading={isLoading}
+        showNegativePrefix
         helper="Does not include current balance."
       />
     </div>
@@ -43,10 +44,12 @@ type CashCardProps = {
   tone: "positive" | "negative";
   loading: boolean;
   helper?: string;
+  showNegativePrefix?: boolean;
 };
 
-function CashCard({ label, value, tone, loading, helper }: CashCardProps) {
-  const formatted = loading ? "—" : `$${value.toFixed(2)}`;
+function CashCard({ label, value, tone, loading, helper, showNegativePrefix }: CashCardProps) {
+  const prefix = showNegativePrefix && tone === "negative" ? "-$" : "$";
+  const formatted = loading ? "—" : `${prefix}${value.toFixed(2)}`;
   const isPositive = tone === "positive";
   const color = isPositive ? "text-emerald-600" : "text-rose-600";
 

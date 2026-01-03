@@ -11,6 +11,11 @@ from app.models.upload import Upload
 
 
 def get_overview_metrics(db: Session) -> List[dict[str, str | float]]:
+    has_bets_stmt = select(func.count()).select_from(Bet)
+    has_bets = db.execute(has_bets_stmt).scalar_one()
+    if not has_bets:
+        return []
+
     total_profit_stmt = select(
         func.coalesce(func.sum(func.coalesce(Bet.payout, 0) - func.coalesce(Bet.stake, 0)), 0)
     )
@@ -74,7 +79,7 @@ def fetch_sport_extreme(db: Session, order: str) -> str:
         .limit(1)
     )
     row = db.execute(stmt).first()
-    return row[0] if row else "Unknown"
+    return row[0] if row else "Unclassified"
 
 
 def get_cashflow_totals(db: Session) -> dict[str, float]:

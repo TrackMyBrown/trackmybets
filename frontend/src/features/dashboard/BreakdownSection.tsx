@@ -154,7 +154,7 @@ function SportsBreakdown() {
         <div className="mt-3 flex flex-col gap-2">
           {(sports ?? []).map((row) => {
             const isActive = row.key === selectedSport;
-            const label = row.key ?? "Unknown";
+            const label = row.key ?? "Unclassified";
             return (
               <button
                 key={label}
@@ -168,7 +168,7 @@ function SportsBreakdown() {
                 <div className="flex items-center justify-between text-sm font-semibold text-slate-900">
                   <span>{label}</span>
                   <span className={row.profit >= 0 ? "text-emerald-600" : "text-rose-600"}>
-                    {row.profit.toFixed(2)}
+                    ${row.profit.toFixed(2)}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500">ROI {(row.roi * 100).toFixed(1)}%</p>
@@ -238,11 +238,11 @@ function BreakdownTable({
       <tbody>
         {rows.map((row) => (
           <tr key={row.key ?? "unknown"} className="rounded-2xl bg-slate-50">
-            <td className="px-4 py-2 font-semibold text-slate-900">{row.key ?? "Unknown"}</td>
+            <td className="px-4 py-2 font-semibold text-slate-900">{row.key ?? "Unclassified"}</td>
             <td className="px-4 py-2">{row.stake.toFixed(2)}</td>
             <td className="px-4 py-2">{row.payout.toFixed(2)}</td>
             <td className={`px-4 py-2 ${row.profit >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-              {row.profit.toFixed(2)}
+              ${row.profit.toFixed(2)}
             </td>
             <td className="px-4 py-2">{(row.roi * 100).toFixed(2)}%</td>
             <td className="px-4 py-2">{(row.win_rate * 100).toFixed(2)}%</td>

@@ -5,10 +5,12 @@ import argparse
 
 from app.core.database import Base, engine
 from app import models  # noqa: F401 - ensure models are imported for metadata
+from app.services.reference_seed import seed_reference_data
 
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    seed_reference_data()
     print("Database schema initialised.")
 
 

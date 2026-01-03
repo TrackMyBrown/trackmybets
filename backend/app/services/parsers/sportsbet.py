@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import List
 
-from app.reference.teams import BET_TYPE_KEYWORDS, TEAMS_BY_SPORT
+from app.reference.loader import load_reference_mappings
+from app.reference.teams import BET_TYPE_KEYWORDS
 
 TRACK_SPLIT = re.compile(r"\s*-\s*")
 RUNNER_REGEX = re.compile(r"(?P<number>\d+)\.\s+(?P<name>[^@]+)")
@@ -14,10 +16,9 @@ ODDS_REGEX = re.compile(r"@\s*(?P<odds>[\d\.]+(?:/[\d\.]+)?)")
 OUTCOME_REGEX = re.compile(r"\((?P<result>Win|Place|Each Way)\)", re.IGNORECASE)
 TEAM_DELIMITERS = [" v ", " vs ", " at ", " @ "]
 PLAYER_MARKET_SPLIT = re.compile(r"\s+[–-]\s+")
-TEAM_LOOKUP = {team.lower(): team for teams in TEAMS_BY_SPORT.values() for team in teams}
-TEAM_SPORT_LOOKUP = {
-    team.lower(): sport for sport, teams in TEAMS_BY_SPORT.items() for team in teams
-}
+TRACK_RACE_PREFIX = re.compile(r"^(r\d+|race\b|heat\b|trial\b|leg\b|bm\d+)", re.IGNORECASE)
+
+TEAM_LOOKUP, TEAM_SPORT_LOOKUP, AMBIGUOUS_TEAM_LOOKUP = load_reference_mappings()
 
 
 @dataclass
@@ -43,6 +44,9 @@ def parse_summary(summary: str) -> ParsedBet:
     teams = detect_teams(event_line)
     track, race = extract_track_and_race(event_line or "")
     sport = infer_sport(teams, event_line)
+    if track:
+        teams = []
+        sport = sport or "Racing"
     runner_number, runner_name = extract_runner(selection_line or summary)
     odds = extract_odds(selection_line or summary)
     result = extract_result(selection_line or summary)
@@ -51,12 +55,13 @@ def parse_summary(summary: str) -> ParsedBet:
     market_type = normalize_label(market_label) or detect_market(normalized, summary)
     if not runner_name and player_name:
         runner_name = player_name
+    league = sport
 
     return ParsedBet(
         bet_type=detected_bet_type,
         market_type=market_type,
         sport=sport,
-        league=sport,
+        league=league,
         teams=teams,
         track=track,
         race=race,
@@ -131,18 +136,28 @@ def detect_teams(event_line: str | None) -> list[str]:
         if re.search(delimiter, event_line, flags=re.IGNORECASE):
             parts = re.split(delimiter, event_line, flags=re.IGNORECASE)
             break
-    teams = []
+    teams_metadata: list[dict[str, object]] = []
     for part in parts:
         candidate = part.strip().split("\n")[0].strip()
         if not candidate:
             continue
         candidate = re.sub(r"\s+", " ", candidate)
-        canonical = TEAM_LOOKUP.get(candidate.lower())
-        teams.append(canonical or candidate)
-        if len(teams) == 2:
+        lowered = candidate.lower()
+        canonical = TEAM_LOOKUP.get(lowered)
+        if canonical:
+            teams_metadata.append({"name": canonical, "sport": TEAM_SPORT_LOOKUP.get(lowered)})
+        elif lowered in AMBIGUOUS_TEAM_LOOKUP:
+            teams_metadata.append({"name": candidate, "sport": None, "options": AMBIGUOUS_TEAM_LOOKUP[lowered]})
+        else:
+            teams_metadata.append({"name": candidate, "sport": None})
+        if len(teams_metadata) == 2:
             break
+
+    resolve_ambiguous_teams(teams_metadata)
+    teams = [meta["name"] for meta in teams_metadata if meta.get("name")]
     if teams:
         return teams
+
     lower_event = event_line.lower()
     for normalized, canonical in TEAM_LOOKUP.items():
         if normalized in lower_event and canonical not in teams:
@@ -150,6 +165,40 @@ def detect_teams(event_line: str | None) -> list[str]:
             if len(teams) == 2:
                 break
     return teams[:2]
+
+
+def resolve_ambiguous_teams(teams_metadata: list[dict[str, object]]) -> None:
+    def current_known_sports() -> set[str]:
+        return {meta["sport"] for meta in teams_metadata if meta.get("sport")}
+
+    for meta in teams_metadata:
+        options = meta.get("options")
+        if not options:
+            continue
+        chosen = pick_team_option(options, current_known_sports())
+        if chosen:
+            meta["name"], meta["sport"] = chosen
+        else:
+            meta["name"] = meta["name"]  # keep alias
+        meta.pop("options", None)
+
+
+def pick_team_option(options: list[tuple[str, str]], known_sports: set[str]) -> tuple[str, str] | None:
+    if known_sports:
+        for sport in known_sports:
+            for name, option_sport in options:
+                if option_sport == sport:
+                    return name, option_sport
+    # try intersection when no known sports
+    sport_counts = defaultdict(int)
+    for _, sport in options:
+        sport_counts[sport] += 1
+    if len(sport_counts) == 1:
+        sport = next(iter(sport_counts))
+        for name, option_sport in options:
+            if option_sport == sport:
+                return name, option_sport
+    return None
 
 
 def infer_sport(teams: list[str], event_line: str | None = None) -> str | None:
@@ -175,9 +224,14 @@ def extract_track_and_race(summary: str) -> tuple[str | None, str | None]:
     if not lines:
         return None, None
     first_line = lines[0]
+    lowered = first_line.lower()
+    if any(delim in lowered for delim in [" v ", " vs ", " vs.", " @ "]):
+        return None, None
     parts = TRACK_SPLIT.split(first_line, maxsplit=1)
     if len(parts) == 2:
-        return parts[0].strip(), parts[1].strip()
+        track_candidate, race_candidate = parts[0].strip(), parts[1].strip()
+        if TRACK_RACE_PREFIX.match(race_candidate):
+            return track_candidate or None, race_candidate or None
     return None, None
 
 

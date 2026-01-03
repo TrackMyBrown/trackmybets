@@ -35,7 +35,7 @@ def metrics_breakdown(
     rows = breakdown_by(db, dimension, category, sport=sport)  # type: ignore[arg-type]
     normalized: list[dict[str, str | float]] = []
     for row in rows:
-        label = row.key or "Unknown"
+        label = row.key or "Unclassified"
         normalized.append(
             {
                 "key": label,

@@ -8,11 +8,12 @@ export type MetricCard = {
   helper: string;
 };
 
-const fallbackMetrics: MetricCard[] = [
-  { label: "Total profit/loss", value: -752.5, helper: "Net result since first upload" },
-  { label: "Win rate", value: 0.38, helper: "Settled bets won / total" },
-  { label: "Average stake", value: 47.2, helper: "Mean stake size" },
-  { label: "Best sport", value: "AFL", helper: "Highest ROI" },
+const emptyStateHint = "Upload a CSV to see sports performance.";
+const emptyStateMetrics: MetricCard[] = [
+  { label: "Total profit/loss", value: "—", helper: emptyStateHint },
+  { label: "Win rate", value: "—", helper: emptyStateHint },
+  { label: "Average stake", value: "—", helper: emptyStateHint },
+  { label: "Best sport", value: "—", helper: emptyStateHint },
 ];
 
 function MetricsOverview() {
@@ -25,18 +26,26 @@ function MetricsOverview() {
     staleTime: 30_000,
   });
 
-  const metrics = data ?? fallbackMetrics;
+  const hasMetrics = Boolean(data && data.length > 0);
+  const metrics: MetricCard[] = hasMetrics ? (data as MetricCard[]) : emptyStateMetrics;
 
   const formatValue = (metric: MetricCard) => {
     if (typeof metric.value !== "number") {
       return metric.value;
     }
 
-    if (metric.label.toLowerCase().includes("win rate")) {
-      return `${metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+    const label = metric.label.toLowerCase();
+    const formatted = metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+    if (label.includes("win rate")) {
+      return `${formatted}%`;
     }
 
-    return metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    if (label.includes("profit") || label.includes("p/l")) {
+      return `$${formatted}`;
+    }
+
+    return formatted;
   };
 
   return (
@@ -48,8 +57,10 @@ function MetricsOverview() {
             {isLoading
               ? "Loading fresh data..."
               : isError
-                ? "Showing cached placeholders"
-                : "Latest metrics from your processed uploads"}
+                ? "We couldn't load metrics just now. Upload a CSV to get started."
+                : hasMetrics
+                  ? "Latest metrics from your processed uploads"
+                  : emptyStateHint}
           </p>
         </div>
       </div>
